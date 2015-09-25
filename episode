@@ -18,6 +18,7 @@ Options:
 """
 import os
 import sys
+import re
 import requests
 from docopt import docopt
 from glob import glob
@@ -32,8 +33,14 @@ def lget(l, idx, default):
     except IndexError:
         return default
 
-def play(somefile):
-    os.system('mpv --fs "' + somefile + '"')
+def play(somefile, actually=True):
+    matches = re.findall(r'S(\d+)E(\d+)\W+(.+?)\.\w+',somefile)
+    if matches:
+        match = matches[0]
+        log("Playing season {}, episode {}: {}".format(int(match[0]), int(match[1]), match[2]))
+    else:
+        log("Playing {}".format(somefile))
+    if actually: os.system('mpv --fs "' + somefile + '" >/dev/null 2>&1')
 
 def log(some_string, file=sys.stderr):
     print(some_string, file=file)
@@ -81,10 +88,8 @@ if args["watch"] or args["play"]:
         else:
             this_episode = 0
     if lget(episodes,this_episode, None) is not None:
-        log("Playing {}".format(episodes[this_episode]))
-        if w:
-            play(episodes[this_episode])
-            set_id(this_episode)
+        play(episodes[this_episode], w)
+        if w: set_id(this_episode)
     else:
         log("Out of episodes. Run again to start from the beginning.")
         if w: os.remove(hidden_data)
