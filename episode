@@ -1,6 +1,10 @@
 #!/usr/local/bin/python3
 """Episode Browser
 
+Requires Python 3 and mpv. Run in a directory of movies, will play the first file.
+Next time, it will play the next one, and so on. Run it with some string to play
+the first matching file.
+
 Usage:
     episode watch [--dry-run] [EPISODE]
     episode play [--dry-run] [EPISODE]
@@ -30,6 +34,17 @@ def play(somefile):
 
 def log(some_string, file=sys.stderr):
     print(some_string, file=file)
+
+def update():
+    url = 'https://raw.githubusercontent.com/L3viathan/scripts/master/episode'
+    log("Trying to update this script...")
+    r = requests.get(url, timeout=5)
+    if r.status_code == 200:
+        log("Response ok, writing to file")
+        with open(__file__, 'w') as script:
+            script.write(r.text)
+    else:
+        log("Failed.")
 
 def get_id():
     try:
@@ -70,3 +85,5 @@ if args["watch"] or args["play"]:
     else:
         log("Out of episodes. Run again to start from the beginning.")
         if w: os.remove(".last-episode-id")
+elif args["update"]:
+    update()
