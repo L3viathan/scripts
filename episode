@@ -1,0 +1,72 @@
+#!/usr/local/bin/python3
+"""Episode Browser
+
+Usage:
+    episode watch [--dry-run] [EPISODE]
+    episode play [--dry-run] [EPISODE]
+
+Options:
+    -h --help   Show this screen.
+    --version   Show version.
+    --dry-run   Don't do anything, just show what would be played
+
+"""
+from docopt import docopt
+from glob import iglob as glob
+import os
+import sys
+
+args = docopt(__doc__, version="v0.3")
+episodes = list(glob("*.*"))
+
+def lget(l, idx, default):
+    try:
+        return l[idx]
+    except IndexError:
+        return default
+
+def play(somefile):
+    os.system('mpv --fs "' + somefile + '"')
+
+def log(some_string, file=sys.stderr):
+    print(some_string, file=file)
+
+def get_id():
+    try:
+        last = int(open(".last-episode-id").read())
+        return last
+    except FileNotFoundError:
+        try:
+            os.remove(".last-episode-id")
+        except FileNotFoundError:
+            pass
+        finally:
+            return None
+
+def set_id(_id):
+    try:
+        open(".last-episode-id","w").write(str(int(_id)))
+    except:
+        log("Can only set to integer")
+
+w = not args["--dry-run"]
+
+if args["watch"] or args["play"]:
+    if args["EPISODE"]:
+        for id_, episode in enumerate(episodes):
+            if args["EPISODE"].lower() in episode.lower():
+                this_episode = id_
+    else:
+        last_episode = get_id()
+        if last_episode is not None:
+            this_episode = last_episode + 1
+        else:
+            this_episode = 0
+    if lget(episodes,this_episode, None) is not None:
+        log("Playing {}".format(episodes[this_episode]))
+        if w:
+            play(episodes[this_episode])
+            set_id(this_episode)
+    else:
+        log("Out of episodes. Run again to start from the beginning.")
+        if w: os.remove(".last-episode-id")
