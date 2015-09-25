@@ -8,6 +8,7 @@ the first matching file.
 Usage:
     episode watch [--dry-run] [EPISODE]
     episode play [--dry-run] [EPISODE]
+    episode update
 
 Options:
     -h --help   Show this screen.
