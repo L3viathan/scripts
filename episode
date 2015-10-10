@@ -6,17 +6,18 @@ Next time, it will play the next one, and so on. Run it with some string to play
 the first matching file.
 
 Usage:
-    episode watch [--dry-run] [EPISODE]
-    episode play [--dry-run] [EPISODE]
+    episode watch [--dry-run] [--no-mpv] [EPISODE]
     episode update
 
 Options:
     -h --help   Show this screen.
     --version   Show version.
     --dry-run   Don't do anything, just show what would be played
+    --no-mpv    Play with system default instead of mpv
 
 """
 import os
+import platform
 import sys
 import re
 import requests
@@ -27,6 +28,16 @@ args = docopt(__doc__, version="v0.3")
 episodes = list(glob("*.*"))
 hidden_data = ".last-episode-id"
 
+if args["--no-mpv"]:
+    if "Darwin" == platform.system():
+        open_command = "open"
+    elif "Linux" == platform.system():
+        open_command = "xdg-open"
+    else: #windows ?
+        open_command = "start"
+else:
+    open_command = "mpv"
+
 def lget(l, idx, default):
     try:
         return l[idx]
@@ -35,7 +46,7 @@ def lget(l, idx, default):
 
 def play(somefile, actually=True):
     log("Playing {}".format(formatEpisode(somefile)))
-    if actually: os.system('mpv --fs "' + somefile + '" >/dev/null 2>&1')
+    if actually: os.system(open_command + ' "' + somefile + '" >/dev/null 2>&1')
 
 def formatEpisode(filename):
     matches = re.findall(r'S(\d+)E(\d+)\W+(.+?)\.\w+',filename)
