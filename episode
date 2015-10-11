@@ -38,6 +38,7 @@ if args["--no-mpv"]:
 else:
     open_command = "mpv"
 
+
 def lget(l, idx, default):
     try:
         return l[idx]
@@ -70,6 +71,19 @@ def update():
             script.write(r.text)
     else:
         log("Failed.")
+
+def install_completions():
+    completion = """#compdef episode
+
+_arguments "1: :(watch update)"\\
+    "2:Options:(--no-mpv --dry-run)"
+    """
+    comp_folder = os.path.expanduser("~/.oh-my-zsh/completions")
+    if os.path.isdir(comp_folder):
+        if not os.path.exists("{}/_episode".format(comp_folder)):
+            with open("{}/_episode".format(comp_folder),"w") as f:
+                f.write(completion)
+            log("Installed ZSH completions")
 
 def get_id():
     try:
@@ -112,3 +126,5 @@ if args["watch"] or args["play"]:
         if w: os.remove(hidden_data)
 elif args["update"]:
     update()
+
+install_completions()
