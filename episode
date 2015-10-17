@@ -27,6 +27,7 @@ from glob import glob
 args = docopt(__doc__, version="v0.3")
 episodes = list(glob("*.*"))
 hidden_data = ".last-episode-id"
+blacklist = ("HDTV", "720p", "1080p", "x264")
 
 if args["--no-mpv"]:
     if "Darwin" == platform.system():
@@ -53,10 +54,11 @@ def formatEpisode(filename):
     matches = re.findall(r'S(\d+)E(\d+)\W+(.+?)\.\w+',filename)
     if matches:
         match = matches[0]
+        if match[2] in blacklist:
+            return "season {}, episode {}".format(int(match[0]), int(match[1]))
         return "season {}, episode {}: {}".format(int(match[0]), int(match[1]), match[2])
     else:
         return filename
-
 
 def log(some_string, file=sys.stderr):
     print(some_string, file=file)
