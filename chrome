@@ -6,7 +6,8 @@ Usage:
     chrome get [-uta]
 
 Options:
-    -t  Use title instead of url for matching
+    -t  Use title instead of url for matching (or only print title in get)
+    -u  Only print URL in get
     -v  Inverse matching
     -r  Use regex matching
     -a  Get active tab
