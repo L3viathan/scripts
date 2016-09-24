@@ -6,7 +6,7 @@ Next time, it will play the next one, and so on. Run it with some string to play
 the first matching file.
 
 Usage:
-    episode watch [--dry-run] [--no-mpv] [EPISODE]
+    episode watch [EPISODE] [--dry-run] [--no-mpv]
     episode update
 
 Options:
@@ -51,9 +51,15 @@ def play(somefile, actually=True):
     if actually: os.system(open_command + ' "' + somefile + '" >/dev/null 2>&1')
 
 def formatEpisode(filename):
-    matches = re.findall(r'S(\d+)E(\d+)\W+(.+?)\.\w+',filename)
-    if matches:
-        match = matches[0]
+    format1 = re.findall(r'S(\d+)E(\d+)\W+(.+?)\.\w+',filename)
+    format2 = re.findall(r'(\d+)x(\d+)\W+(.+?)\.\w+',filename)
+    if format1:
+        match = format1[0]
+        if match[2] in blacklist:
+            return "season {}, episode {}".format(int(match[0]), int(match[1]))
+        return "season {}, episode {}: {}".format(int(match[0]), int(match[1]), match[2])
+    elif format2:
+        match = format2[0]
         if match[2] in blacklist:
             return "season {}, episode {}".format(int(match[0]), int(match[1]))
         return "season {}, episode {}: {}".format(int(match[0]), int(match[1]), match[2])
@@ -78,7 +84,8 @@ def install_completions():
     completion = """#compdef episode
 
 _arguments "1: :(watch update)"\\
-    "2:Options:(--no-mpv --dry-run)"
+    "2: :_files"\\
+    "3:Options:(--no-mpv --dry-run)"
     """
     comp_folder = os.path.expanduser("~/.oh-my-zsh/completions")
     if os.path.isdir(comp_folder):
@@ -107,7 +114,7 @@ def set_id(_id):
 
 w = not args["--dry-run"]
 
-if args["watch"] or args["play"]:
+if args["watch"]:
     if args["EPISODE"]:
         for id_, episode in enumerate(episodes):
             if args["EPISODE"].lower() in episode.lower():
