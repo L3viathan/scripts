@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+"""
+Simple timezone conversion
+
+Usage:
+    tzconv <time> <fromTZ> [<toTZ>]
+"""
+
+from datetime import datetime
+from docopt import docopt
+from pytz import timezone
+from tzlocal import get_localzone
+
+common_abbreviations = {
+        'PDT': 'US/Pacific',
+        'CET': 'Europe/Berlin',
+        'CEST': 'Europe/Berlin',
+        'EST': 'US/Eastern',
+        'EDT': 'US/Eastern',
+        'AST': 'US/Eastern',
+        'CST': 'US/Central',
+        'CDT': 'US/Central',
+        }
+
+if __name__ == '__main__':
+    args = docopt(__doc__, version="0.1")
+
+    from_tz = timezone(common_abbreviations.get(args['<fromTZ>'], args['<fromTZ>']))
+
+    if args['<toTZ>']:
+        to_tz = timezone(common_abbreviations.get(args['<toTZ>'], args['<toTZ>']))
+    else:
+        to_tz = get_localzone()
+
+    ymd = datetime.now().strftime('%Y-%m-%d-')
+
+    for frmt in '%Y-%m-%d-%H:%M', '%Y-%m-%d-%H':
+        try:
+            dt = datetime.strptime(ymd + args['<time>'], frmt)
+            break
+        except:
+            pass
+    else:
+        raise RuntimeError('Invalid timestamp: ' + args['<time>'])
+    tzdt = from_tz.localize(dt)
+    targetdt = tzdt.astimezone(to_tz)
+    print(targetdt.strftime('%H:%M'))
