@@ -20,6 +20,11 @@ common_abbreviations = {
         'AST': 'US/Eastern',
         'CST': 'US/Central',
         'CDT': 'US/Central',
+        'EET': 'Europe/Bucharest',
+        'EEST': 'Europe/Bucharest',
+        'WET': 'GMT',
+        'WEST': 'Europe/London',
+        'FET': 'Europe/Moscow',
         }
 
 if __name__ == '__main__':
