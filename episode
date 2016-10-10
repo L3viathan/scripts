@@ -83,16 +83,30 @@ def update():
 def install_completions():
     completion = """#compdef episode
 
-_arguments "1: :(watch update)"\\
-    "2: :_files"\\
-    "3:Options:(--no-mpv --dry-run)"
-    """
-    comp_folder = os.path.expanduser("~/.oh-my-zsh/completions")
+__episode() {
+    local curcontext="$curcontext" fileopts diropts cur prev
+    typeset -A opt_args
+    cur=$words[CURRENT]
+    prev=$words[CURRENT-1]
+    if [[ ${prev} == "watch" ]]; then
+        _path_files
+    elif [[ ${prev} == "update" ]]; then
+        return
+    elif [[ ${prev} == --* ]]; then
+        _arguments '*: :(watch)'
+    else
+        _arguments '*: :(watch update --dry-run --no-mpv)'
+    fi
+}
+
+__episode
+"""
+    comp_folder = "/usr/local/share/zsh/site-functions"
     if os.path.isdir(comp_folder):
         if not os.path.exists("{}/_episode".format(comp_folder)):
             with open("{}/_episode".format(comp_folder),"w") as f:
                 f.write(completion)
-            log("Installed ZSH completions")
+            log("Installed ZSH completions to {}".format(comp_folder))
 
 def get_id():
     try:
