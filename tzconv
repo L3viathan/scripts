@@ -13,6 +13,7 @@ from tzlocal import get_localzone
 
 common_abbreviations = {
         'PDT': 'US/Pacific',
+        'BST': 'Europe/London',
         'CET': 'Europe/Berlin',
         'CEST': 'Europe/Berlin',
         'EST': 'US/Eastern',
@@ -49,4 +50,5 @@ if __name__ == '__main__':
         raise RuntimeError('Invalid timestamp: ' + args['<time>'])
     tzdt = from_tz.localize(dt)
     targetdt = tzdt.astimezone(to_tz)
+    print("{} → {}".format(from_tz, to_tz))
     print(targetdt.strftime('%H:%M'))
