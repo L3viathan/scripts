@@ -8,7 +8,7 @@ Usage:
 
 from datetime import datetime
 from docopt import docopt
-from pytz import timezone
+from pytz import timezone, all_timezones
 from tzlocal import get_localzone
 
 common_abbreviations = {
@@ -28,13 +28,22 @@ common_abbreviations = {
         'FET': 'Europe/Moscow',
         }
 
+def get_tz(string):
+    if string in common_abbreviations:
+        return common_abbreviations[string]
+    elif string in all_timezones:
+        return string
+    for tz in all_timezones:
+        if string in tz:
+            return tz
+
 if __name__ == '__main__':
     args = docopt(__doc__, version="0.1")
 
-    from_tz = timezone(common_abbreviations.get(args['<fromTZ>'], args['<fromTZ>']))
+    from_tz = timezone(get_tz(args['<fromTZ>']))
 
     if args['<toTZ>']:
-        to_tz = timezone(common_abbreviations.get(args['<toTZ>'], args['<toTZ>']))
+        to_tz = timezone(get_tz(args['<toTZ>']))
     else:
         to_tz = get_localzone()
 
