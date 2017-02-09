@@ -18,7 +18,7 @@ import docopt
 import subprocess
 
 
-pattern = r'URL:(?P<url>.+?), name:(?P<title>.*?), loading:(?P<loading>\w+), class:tab, id:(?P<id>\d+)'
+pattern = r'name:(?P<title>.*?), URL:(?P<url>.+?), index:(?P<index>\d+), visible:(?P<visible>\w+), class:tab'
 
 def get_tabs():
     output=subprocess.check_output(r'osascript -e "tell application \"Safari\" to get properties of tabs of windows"', shell=True).decode('utf-8', 'ignore')
@@ -54,7 +54,7 @@ def get():
 
 if __name__ == '__main__':
     args = docopt.docopt(__doc__, version="0.1.1")
-    if len(os.popen("ps -aef | grep -i 'Safari$'|grep -v 'grep'").read().strip().split('\n')) > 1:
+    if len(os.popen("ps -aef | grep -i 'Safari$'|grep -v 'grep'").read().strip().split('\n')) >= 1:
         # Race condition, but eh..
         if(args['close']):
             close(args['<pattern>'], use_title=args['-t'])
