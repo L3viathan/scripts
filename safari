@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+"""Safari tab interaction thing
+
+Usage:
+    safari close [-tvr] <pattern>
+    safari get [-uta]
+
+Options:
+    -t  Use title instead of url for matching (or only print title in get)
+    -u  Only print URL in get
+    -v  Inverse matching
+    -r  Use regex matching
+    -a  Get active tab
+"""
+import os
+import re
+import docopt
+import subprocess
+
+
+pattern = r'URL:(?P<url>.+?), name:(?P<title>.*?), loading:(?P<loading>\w+), class:tab, id:(?P<id>\d+)'
+
+def get_tabs():
+    output=subprocess.check_output(r'osascript -e "tell application \"Safari\" to get properties of tabs of windows"', shell=True).decode('utf-8', 'ignore')
+    return [m.groupdict() for m in re.finditer(pattern, output)]
+
+def get_active_tabs():
+    output=subprocess.check_output(r'osascript -e "tell application \"Safari\" to get properties of active tab of windows"', shell=True).decode('utf-8', 'ignore')
+    return [m.groupdict() for m in re.finditer(pattern, output)]
+
+def close(pattern, use_title=False):
+    tabs = get_tabs()
+    for tab in tabs:
+        hay = tab['title'] if args['-t'] else tab['url']
+        if args['-r']:
+            if (bool(re.search(pattern, hay))) != args['-v']: #xor
+                subprocess.check_output(r'osascript -e "tell application \"Safari\" to close tab id {} of windows'.format(tab['id']), shell=True).decode('utf-8', 'ignore')
+        else:
+            if (pattern in hay) != args['-v']: #xor
+                subprocess.check_output(r'osascript -e "tell application \"Safari\" to close tab id {} of windows"'.format(tab['id']), shell=True).decode('utf-8', 'ignore')
+
+def get():
+    tabs = (get_active_tabs if args['-a'] else get_tabs)()
+    for tab in tabs:
+        if args['-t']:
+            print(tab['title'].encode("ascii","ignore").decode("ascii","ignore"))
+        elif args['-u']:
+            print(tab['url'].encode("ascii","ignore").decode("ascii","ignore"))
+        else:
+            if tab['title']:
+                print("{} ({})".format(tab['title'], tab['url']).encode("ascii", "ignore").decode("ascii","ignore"))
+            else:
+                print(tab['url'].encode("ascii","ignore").decode("ascii","ignore"))
+
+if __name__ == '__main__':
+    args = docopt.docopt(__doc__, version="0.1.1")
+    if len(os.popen("ps -aef | grep -i 'Safari$'|grep -v 'grep'").read().strip().split('\n')) > 1:
+        # Race condition, but eh..
+        if(args['close']):
+            close(args['<pattern>'], use_title=args['-t'])
+        elif(args['get']):
+            get()
+    else:
+        print("Safari isn't running, exiting.")
