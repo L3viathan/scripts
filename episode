@@ -24,11 +24,16 @@ import requests
 from docopt import docopt
 from glob import glob
 
-args = docopt(__doc__, version="v0.3")
-episodes = list(glob("*.*"))
+forbidden_ext = [".srt", ".txt", ".png"]
 hidden_data = ".last-episode-id"
 blacklist = ("HDTV", "720p", "1080p", "x264")
 
+args = docopt(__doc__, version="v0.3")
+episodes = [
+        fn for fn in glob("*.*") if not any(
+            fn.endswith(x) for x in forbidden_ext
+            )
+        ]
 if args["--no-mpv"]:
     if "Darwin" == platform.system():
         open_command = "open"
