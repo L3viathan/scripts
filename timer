@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+
+"""
+Super simple timer application in "natural" language.
+"""
+
+import ast
+import sys
+import time
+
+minute = 60
+hour = 60*minute
+DEBUG=False
+
+# from /usr/share/misc/units.lib
+units = dict(map(lambda x: x.split("\t"),
+"""second	sec
+s	sec
+seconds	sec
+minute	60 sec +
+minutes	minute
+min	minute
+mins	minute
+hour	60 min +
+hr	hour
+hrs	hour
+hours	hour
+day	24 hour +
+days	day
+da	day
+week	7 day +
+weeks	week
+year	365.24219879 day +
+years	year
+yrs	year
+yr	year
+month	0.8333333 year +
+months	month
+and	+
+sec	1
+of	1
+a	1
+an	1
+one	1
+two	2
+three	3
+four	4
+five	5
+six	6
+seven	7
+eight	8
+nine	9
+ten	10
+eleven	11
+twelve	12
+fifteen	15
+twenty	20
+thirty	30
+half	0.5
+quarter	0.25
+us	microsec""".split("\n")))
+
+tests = [
+    ("1 minute", 60),
+    ("2 minutes", 120),
+    ("a second", 1),
+    ("4 minutes and 3 seconds", 243),
+    ]
+
+
+def log(level, *args, **kwargs):
+    if level <= DEBUG:
+        print(*args, **kwargs, file=sys.stderr)
+
+
+def safe_eval(s):
+    def inner(op_or_val):
+        if isinstance(op_or_val, ast.BinOp):
+            op = op_or_val.op
+            if isinstance(op, ast.Add):
+                return inner(op_or_val.left) + inner(op_or_val.right)
+            elif isinstance(op, ast.Mult):
+                return inner(op_or_val.left) * inner(op_or_val.right)
+        else:
+            return op_or_val.n
+    return inner(ast.parse(s).body[0].value)
+
+
+def phrase2seconds(phrase):
+    remaining = []
+    while phrase:
+        log(1, phrase)
+        w = phrase.pop(0)
+        if w in units:
+            for x in reversed(units[w].split()):
+                phrase.insert(0, x)
+        else:
+            remaining.append(w)
+    expr = '*'.join(remaining)
+    log(1, expr)
+    expr = expr.replace('*+*', '+')
+    while '++' in expr:
+        expr = expr.replace('++', '+')
+    expr = expr.replace('+*', '+').replace('*+', '+').strip('+')
+    log(1, expr)
+    return int(safe_eval(expr))
+
+
+def build_time(seconds):
+    if seconds > hour:
+        return "{}h{:02d}'".format(seconds//hour, (seconds % hour)//minute)
+    else:
+        return '''{}'{:02d}"'''.format(seconds//minute, seconds % minute)
+
+
+if len(sys.argv) < 2:
+    seconds = phrase2seconds(input("Enter time to wait: ").strip().split())
+else:
+    seconds = phrase2seconds(sys.argv[1:])
+
+try:
+    while seconds > 0:
+        if seconds > hour*2:
+            log(0, '\rRemaining time:', build_time(seconds), end='', flush=True)
+            time.sleep(minute)
+            seconds -= minute
+        else:
+            log(0, '\rRemaining time:', build_time(seconds), end='', flush=True)
+            time.sleep(1)
+            seconds -= 1
+    log(0, '\r', end='', flush=True)
+except KeyboardInterrupt:
+    sys.exit(1)

@@ -6,27 +6,28 @@ Usage:
     tzconv <time> <fromTZ> [<toTZ>]
 """
 
+import sys
 from datetime import datetime
 from docopt import docopt
 from pytz import timezone, all_timezones
 from tzlocal import get_localzone
 
 common_abbreviations = {
-        'PDT': 'US/Pacific',
-        'BST': 'Europe/London',
-        'CET': 'Europe/Berlin',
-        'CEST': 'Europe/Berlin',
-        'EST': 'US/Eastern',
-        'EDT': 'US/Eastern',
-        'AST': 'US/Eastern',
-        'CST': 'US/Central',
-        'CDT': 'US/Central',
-        'EET': 'Europe/Bucharest',
-        'EEST': 'Europe/Bucharest',
-        'WET': 'GMT',
-        'WEST': 'Europe/London',
-        'FET': 'Europe/Moscow',
-        }
+    'PDT': 'US/Pacific',
+    'BST': 'Europe/London',
+    'CET': 'Europe/Berlin',
+    'CEST': 'Europe/Berlin',
+    'EST': 'US/Eastern',
+    'EDT': 'US/Eastern',
+    'AST': 'US/Eastern',
+    'CST': 'US/Central',
+    'CDT': 'US/Central',
+    'EET': 'Europe/Bucharest',
+    'EEST': 'Europe/Bucharest',
+    'WET': 'GMT',
+    'WEST': 'Europe/London',
+    'FET': 'Europe/Moscow',
+}
 
 def get_tz(string):
     if string in common_abbreviations:
@@ -36,16 +37,21 @@ def get_tz(string):
     for tz in all_timezones:
         if string in tz:
             return tz
+    raise ValueError(f'Unknown timezone name: {string}')
 
 if __name__ == '__main__':
     args = docopt(__doc__, version="0.1")
 
-    from_tz = timezone(get_tz(args['<fromTZ>']))
+    try:
+        from_tz = timezone(get_tz(args['<fromTZ>']))
 
-    if args['<toTZ>']:
-        to_tz = timezone(get_tz(args['<toTZ>']))
-    else:
-        to_tz = get_localzone()
+        if args['<toTZ>']:
+            to_tz = timezone(get_tz(args['<toTZ>']))
+        else:
+            to_tz = get_localzone()
+    except ValueError as e:
+        print(e.args[0], file=sys.stderr)
+        sys.exit(1)
 
     ymd = datetime.now().strftime('%Y-%m-%d-')
 
@@ -56,7 +62,8 @@ if __name__ == '__main__':
         except:
             pass
     else:
-        raise RuntimeError('Invalid timestamp: ' + args['<time>'])
+        print('Invalid timestamp:', args['<time>'], file=sys.stderr)
+        sys.exit(1)
     tzdt = from_tz.localize(dt)
     targetdt = tzdt.astimezone(to_tz)
     print("{} → {}".format(from_tz, to_tz))
