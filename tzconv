@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
-"""
-Simple timezone conversion
-
-Usage:
-    tzconv <time> <fromTZ> [<toTZ>]
-"""
 
 import sys
 from datetime import datetime
-from docopt import docopt
-from pytz import timezone, all_timezones
+
+import click
+from pytz import timezone, all_timezones, BaseTzInfo
 from tzlocal import get_localzone
 
 common_abbreviations = {
@@ -39,32 +34,49 @@ def get_tz(string):
             return tz
     raise ValueError(f'Unknown timezone name: {string}')
 
-if __name__ == '__main__':
-    args = docopt(__doc__, version="0.1")
+def make_tz(ctx, argument, value):
+    if isinstance(value, BaseTzInfo):
+        return value
+    return timezone(get_tz(value))
 
-    try:
-        from_tz = timezone(get_tz(args['<fromTZ>']))
-
-        if args['<toTZ>']:
-            to_tz = timezone(get_tz(args['<toTZ>']))
-        else:
-            to_tz = get_localzone()
-    except ValueError as e:
-        print(e.args[0], file=sys.stderr)
-        sys.exit(1)
-
+def make_dt(ctx, argument, value):
+    if isinstance(value, datetime):
+        return value
     ymd = datetime.now().strftime('%Y-%m-%d-')
 
     for frmt in '%Y-%m-%d-%H:%M', '%Y-%m-%d-%H':
         try:
-            dt = datetime.strptime(ymd + args['<time>'], frmt)
-            break
-        except:
+            return datetime.strptime(ymd + value, frmt)
+        except ValueError:  # to replace with actual error
             pass
     else:
-        print('Invalid timestamp:', args['<time>'], file=sys.stderr)
-        sys.exit(1)
-    tzdt = from_tz.localize(dt)
-    targetdt = tzdt.astimezone(to_tz)
-    print("{} → {}".format(from_tz, to_tz))
+        raise click.BadParameter(f"Invalid timestamp: {value}")
+
+
+@click.command()
+@click.option(
+    "--from",
+    "from_",
+    help="Timezone to convert from",
+    default=get_localzone(),
+    callback=make_tz,
+)
+@click.option(
+    "--to",
+    help="Timezone to convert to",
+    default=get_localzone(),
+    callback=make_tz,
+)
+@click.argument(
+    "time",
+    default=datetime.now(),
+    callback=make_dt,
+)
+def cli(from_, to, time):
+    tzdt = from_.localize(time)
+    targetdt = tzdt.astimezone(to)
+    print("{} → {}".format(from_, to))
     print(targetdt.strftime('%H:%M'))
+
+if __name__ == '__main__':
+    cli()
