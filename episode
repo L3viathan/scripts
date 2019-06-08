@@ -26,20 +26,18 @@ from glob import glob
 
 forbidden_ext = [".srt", ".txt", ".png"]
 hidden_data = ".last-episode-id"
-blacklist = ("HDTV", "720p", "1080p", "x264")
+blacklist = ("HDTV", "720p", "1080p", "x264", "x265")
 
 args = docopt(__doc__, version="v0.3")
 episodes = [
-        fn for fn in glob("*.*") if not any(
-            fn.endswith(x) for x in forbidden_ext
-            )
-        ]
+    fn for fn in glob("*.*") if not any(fn.endswith(x) for x in forbidden_ext)
+]
 if args["--no-mpv"]:
     if "Darwin" == platform.system():
         open_command = "open"
     elif "Linux" == platform.system():
         open_command = "xdg-open"
-    else: #windows ?
+    else:  # windows ?
         open_command = "start"
 else:
     open_command = "mpv"
@@ -51,39 +49,49 @@ def lget(l, idx, default):
     except IndexError:
         return default
 
+
 def play(somefile, actually=True):
     log("Playing {}".format(formatEpisode(somefile)))
-    if actually: os.system(open_command + ' "' + somefile + '" >/dev/null 2>&1')
+    if actually:
+        os.system(open_command + ' "' + somefile + '" >/dev/null 2>&1')
+
 
 def formatEpisode(filename):
-    format1 = re.findall(r'S(\d+)E(\d+)\W+(.+?)\.\w+',filename)
-    format2 = re.findall(r'(\d+)x(\d+)\W+(.+?)\.\w+',filename)
+    format1 = re.findall(r"S(\d+)E(\d+)\W+(.+?)\.\w+", filename)
+    format2 = re.findall(r"(\d+)x(\d+)\W+(.+?)\.\w+", filename)
     if format1:
         match = format1[0]
         if match[2] in blacklist:
             return "season {}, episode {}".format(int(match[0]), int(match[1]))
-        return "season {}, episode {}: {}".format(int(match[0]), int(match[1]), match[2])
+        return "season {}, episode {}: {}".format(
+            int(match[0]), int(match[1]), match[2]
+        )
     elif format2:
         match = format2[0]
         if match[2] in blacklist:
             return "season {}, episode {}".format(int(match[0]), int(match[1]))
-        return "season {}, episode {}: {}".format(int(match[0]), int(match[1]), match[2])
+        return "season {}, episode {}: {}".format(
+            int(match[0]), int(match[1]), match[2]
+        )
     else:
         return filename
+
 
 def log(some_string, file=sys.stderr):
     print(some_string, file=file)
 
+
 def update():
-    url = 'https://raw.githubusercontent.com/L3viathan/scripts/master/episode'
+    url = "https://raw.githubusercontent.com/L3viathan/scripts/master/episode"
     log("Trying to update this script...")
     r = requests.get(url, timeout=5)
     if r.status_code == 200:
         log("Response ok, writing to file")
-        with open(__file__, 'w') as script:
+        with open(__file__, "w") as script:
             script.write(r.text)
     else:
         log("Failed.")
+
 
 def install_completions():
     completion = """#compdef episode
@@ -109,9 +117,10 @@ __episode
     comp_folder = "/usr/local/share/zsh/site-functions"
     if os.path.isdir(comp_folder):
         if not os.path.exists("{}/_episode".format(comp_folder)):
-            with open("{}/_episode".format(comp_folder),"w") as f:
+            with open("{}/_episode".format(comp_folder), "w") as f:
                 f.write(completion)
             log("Installed ZSH completions to {}".format(comp_folder))
+
 
 def get_id():
     try:
@@ -125,11 +134,13 @@ def get_id():
         finally:
             return None
 
+
 def set_id(_id):
     try:
-        open(hidden_data,"w").write(str(int(_id)))
-    except:
+        open(hidden_data, "w").write(str(int(_id)))
+    except ValueError:
         log("Can only set to integer")
+
 
 w = not args["--dry-run"]
 
@@ -144,14 +155,16 @@ if args["watch"]:
             this_episode = last_episode + 1
         else:
             this_episode = 0
-    if lget(episodes,this_episode, None) is not None:
+    if lget(episodes, this_episode, None) is not None:
         play(episodes[this_episode], w)
-        if lget(episodes,this_episode+1, None) is not None:
-            log("Next up: {}".format(formatEpisode(episodes[this_episode+1])))
-        if w: set_id(this_episode)
+        if lget(episodes, this_episode + 1, None) is not None:
+            log("Next up: {}".format(formatEpisode(episodes[this_episode + 1])))
+        if w:
+            set_id(this_episode)
     else:
         log("Out of episodes. Run again to start from the beginning.")
-        if w: os.remove(hidden_data)
+        if w:
+            os.remove(hidden_data)
 elif args["update"]:
     update()
 
