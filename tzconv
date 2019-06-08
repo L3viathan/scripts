@@ -2,6 +2,7 @@
 
 import sys
 from datetime import datetime
+from itertools import chain
 
 import click
 from pytz import timezone, all_timezones, BaseTzInfo
@@ -26,6 +27,7 @@ common_abbreviations = {
     "FET": "Europe/Moscow",
 }
 
+
 def get_tz(string):
     if string in common_abbreviations:
         return common_abbreviations[string]
@@ -36,10 +38,12 @@ def get_tz(string):
             return tz
     raise ValueError(f"Unknown timezone name: {string}")
 
+
 def make_tz(ctx, argument, value):
     if isinstance(value, BaseTzInfo):
         return value
     return timezone(get_tz(value))
+
 
 def make_dt(ctx, argument, value):
     if isinstance(value, datetime):
@@ -55,6 +59,35 @@ def make_dt(ctx, argument, value):
         raise click.BadParameter(f"Invalid timestamp: {value}")
 
 
+def complete_timezone(ctx, args, incomplete):
+    return [
+        tz
+        for tz in chain(common_abbreviations, all_timezones)
+        if incomplete in tz
+    ]
+
+
+def complete_time(ctx, args, incomplete):
+    if incomplete.count(":", 1):
+        first, _, second = incomplete.partition(":")
+        if not first.isdigit():
+            return []
+        if second and not second.isdigit():
+            return []
+        return [
+            f"{first}:{i:02d}"
+            for i in range(60)
+            if str(f"{i:02d}").startswith(second)
+        ]
+    elif incomplete.isdigit():
+        if len(incomplete) == 2 or incomplete[0] in "3456789":
+            return [f"{incomplete}:{i:02d}" for i in range(60)]
+        return [
+            f"{i:02d}" for i in range(24) if incomplete.startswith(f"{i:02d}")
+        ]
+    return [f"{i:02d}" for i in range(24)]
+
+
 @click.command()
 @click.option(
     "--from",
@@ -62,23 +95,27 @@ def make_dt(ctx, argument, value):
     help="Timezone to convert from",
     default=get_localzone(),
     callback=make_tz,
+    autocompletion=complete_timezone,
 )
 @click.option(
     "--to",
     help="Timezone to convert to",
     default=get_localzone(),
     callback=make_tz,
+    autocompletion=complete_timezone,
 )
 @click.argument(
     "time",
     default=datetime.now(),
     callback=make_dt,
+    autocompletion=complete_time,
 )
 def cli(from_, to, time):
     tzdt = from_.localize(time)
     targetdt = tzdt.astimezone(to)
     print("{} → {}".format(from_, to))
     print(targetdt.strftime("%H:%M"))
+
 
 if __name__ == "__main__":
     cli()
