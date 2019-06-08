@@ -8,20 +8,22 @@ from pytz import timezone, all_timezones, BaseTzInfo
 from tzlocal import get_localzone
 
 common_abbreviations = {
-    'PDT': 'US/Pacific',
-    'BST': 'Europe/London',
-    'CET': 'Europe/Berlin',
-    'CEST': 'Europe/Berlin',
-    'EST': 'US/Eastern',
-    'EDT': 'US/Eastern',
-    'AST': 'US/Eastern',
-    'CST': 'US/Central',
-    'CDT': 'US/Central',
-    'EET': 'Europe/Bucharest',
-    'EEST': 'Europe/Bucharest',
-    'WET': 'GMT',
-    'WEST': 'Europe/London',
-    'FET': 'Europe/Moscow',
+    "PDT": "US/Pacific",
+    "PT": "US/Pacific",
+    "BST": "Europe/London",
+    "CET": "Europe/Berlin",
+    "CEST": "Europe/Berlin",
+    "EST": "US/Eastern",
+    "EDT": "US/Eastern",
+    "ET": "US/Eastern",
+    "AST": "US/Eastern",
+    "CST": "US/Central",
+    "CDT": "US/Central",
+    "EET": "Europe/Bucharest",
+    "EEST": "Europe/Bucharest",
+    "WET": "GMT",
+    "WEST": "Europe/London",
+    "FET": "Europe/Moscow",
 }
 
 def get_tz(string):
@@ -32,7 +34,7 @@ def get_tz(string):
     for tz in all_timezones:
         if string in tz:
             return tz
-    raise ValueError(f'Unknown timezone name: {string}')
+    raise ValueError(f"Unknown timezone name: {string}")
 
 def make_tz(ctx, argument, value):
     if isinstance(value, BaseTzInfo):
@@ -42,9 +44,9 @@ def make_tz(ctx, argument, value):
 def make_dt(ctx, argument, value):
     if isinstance(value, datetime):
         return value
-    ymd = datetime.now().strftime('%Y-%m-%d-')
+    ymd = datetime.now().strftime("%Y-%m-%d-")
 
-    for frmt in '%Y-%m-%d-%H:%M', '%Y-%m-%d-%H':
+    for frmt in "%Y-%m-%d-%H:%M", "%Y-%m-%d-%H":
         try:
             return datetime.strptime(ymd + value, frmt)
         except ValueError:  # to replace with actual error
@@ -76,7 +78,7 @@ def cli(from_, to, time):
     tzdt = from_.localize(time)
     targetdt = tzdt.astimezone(to)
     print("{} → {}".format(from_, to))
-    print(targetdt.strftime('%H:%M'))
+    print(targetdt.strftime("%H:%M"))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()
